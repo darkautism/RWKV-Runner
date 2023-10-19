@@ -118,7 +118,45 @@ jobs:
           mv build/bin/RWKV-Runner build/bin/RWKV-Runner_linux_x64
 
       - run: gh release upload ${{github.ref_name}} build/bin/RWKV-Runner_linux_x64
+  linux-arm64:
+    runs-on: ubuntu-20.04
+    needs: create-draft
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: master
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.20.5'
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          target: aarch64-unknown-linux-gnu
+      - run: |
+          sudo apt-get update
+          sudo apt-get install upx
+          sudo apt-get install build-essential libgtk-3-dev libwebkit2gtk-4.0-dev
+          git clone https://github.com/josStorer/ai00_rwkv_server --depth=1
+          cd ai00_rwkv_server
+          sudo apt-get install libudev-dev
+          sudo apt-get install libasound2-dev
+          rustup target add aarch64-unknown-linux-gnu
+          cargo build --release --target aarch64-unknown-linux-gnu
+          mv ./target/x86_64-unknown-linux-gnu/release/ai00_server ../backend-rust/webgpu_server
+          cd ..
+          go install github.com/wailsapp/wails/v2/cmd/wails@latest
+          rm ./backend-python/rwkv_pip/wkv_cuda.pyd
+          rm ./backend-python/rwkv_pip/rwkv5.pyd
+          rm ./backend-python/rwkv_pip/beta/wkv_cuda.pyd
+          rm ./backend-python/get-pip.py
+          sed -i '1,2d' ./backend-golang/wsl_not_windows.go
+          rm ./backend-golang/wsl.go
+          mv ./backend-golang/wsl_not_windows.go ./backend-golang/wsl.go
+          wails build -upx -ldflags "-s -w" -platform linux/arm64
+          mv build/bin/RWKV-Runner build/bin/RWKV-Runner_linux_arm64
 
+      - run: gh release upload ${{github.ref_name}} build/bin/RWKV-Runner_linux_arm64
   macos:
     runs-on: macos-13
     needs: create-draft
@@ -157,7 +195,7 @@ jobs:
 
   publish-release:
     runs-on: ubuntu-22.04
-    needs: [ windows, linux, macos ]
+    needs: [ windows, linux, macos, linux-arm64 ]
     steps:
       - uses: actions/checkout@v3
       - run: gh release edit ${{github.ref_name}} --draft=false
