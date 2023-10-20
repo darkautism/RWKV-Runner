@@ -134,7 +134,7 @@ jobs:
       - run: |
           sudo apt-get update
           sudo apt-get install upx
-          sudo apt-get install build-essential libgtk-3-dev libwebkit2gtk-4.0-dev
+          sudo apt-get install build-essential libgtk-3-dev libwebkit2gtk-4.0-dev gcc-aarch64-linux-gnu
           git clone https://github.com/josStorer/ai00_rwkv_server --depth=1
           cd ai00_rwkv_server
           sudo apt-get install libudev-dev
